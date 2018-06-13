@@ -25,9 +25,9 @@ type ReturnID struct {
 }
 
 const (
-	StateOpen   = "OPEN"
-	StateActive = "ACTIVE"
-	StateClosed = "CLOSED"
+	StateBefore = "BEFORE"
+	StateDuring = "DURING"
+	StateAfter  = "AFTER"
 )
 
 type BetEntry struct {
@@ -85,7 +85,7 @@ func CreateBet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bet := Bet{
-		State:   StateOpen,
+		State:   StateBefore,
 		MatchID: params["matchId"],
 		Users: map[string]bool{
 			token: true,
