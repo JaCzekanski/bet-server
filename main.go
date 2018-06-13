@@ -20,25 +20,25 @@ const (
 	ADDR = ":8080"
 )
 
-type ReturnId struct {
+type ReturnID struct {
 	ID string `json:"id"`
 }
 
 const (
-	STATE_OPEN   = "OPEN"
-	STATE_ACTIVE = "ACTIVE"
-	STATE_CLOSED = "CLOSED"
+	StateOpen   = "OPEN"
+	StateActive = "ACTIVE"
+	StateClosed = "CLOSED"
 )
 
 type BetEntry struct {
-	Bid   *int      `firestore:"bid",json:"bid"`
+	Bid   *int      `firestore:"bid" json:"bid"`
 	Date  time.Time `firestore:"date"`
-	Score string    `firestore:"score",json:"score"`
+	Score string    `firestore:"score" json:"score"`
 }
 
 type Bet struct {
 	State   string              `firestore:"state"`
-	MatchID string              `firestore:"match_id"`
+	MatchID string              `firestore:"matchId"`
 	Users   map[string]bool     `firestore:"users"`
 	Bets    map[string]BetEntry `firestore:"bets"`
 }
@@ -85,7 +85,7 @@ func CreateBet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bet := Bet{
-		State:   STATE_OPEN,
+		State:   StateOpen,
 		MatchID: params["matchId"],
 		Users: map[string]bool{
 			token: true,
@@ -106,7 +106,7 @@ func CreateBet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(ReturnId{ID: ref.ID})
+	json.NewEncoder(w).Encode(ReturnID{ID: ref.ID})
 }
 
 func PutBet(w http.ResponseWriter, r *http.Request) {
