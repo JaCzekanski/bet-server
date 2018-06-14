@@ -233,6 +233,46 @@ func DeleteBet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
+	// token := *getAuth(r)
+	params := mux.Vars(r)
+
+	betId := params["betId"]
+	userId := params["userId"]
+
+	var bet Bet
+	ref, err := firestore.Collection("bets").Doc(betId).Get(context.Background())
+
+	if err != nil {
+		log.Println("Unable to find bet.", err)
+		http.Error(w, "Unable to find bet.", http.StatusBadRequest)
+		return
+	}
+
+	err = ref.DataTo(&bet)
+	if err != nil {
+		log.Println("Unable to parse bet.", err)
+		http.Error(w, "Unable to parse bet.", http.StatusBadRequest)
+		return
+	}
+
+	bet.Users[userId] = true
+	bet.Bets[userId] = BetEntry{
+		Bid:   nil,
+		Date:  time.Now(),
+		Score: "",
+	}
+
+	_, err = firestore.Collection("bets").Doc(betId).Set(context.Background(), bet)
+	if err != nil {
+		log.Println("Unable to save bet record.", err)
+		http.Error(w, "Unable to save bet record.", http.StatusBadRequest)
+		return
+	}
+
+	// Send push notification
+}
+
 func main() {
 	ctx := context.Background()
 	opt := option.WithCredentialsFile("bet-app-bc625-firebase-adminsdk-j2r9e-c7205cb679.json")
@@ -252,6 +292,7 @@ func main() {
 	router.HandleFunc("/bet/{matchId}", use(CreateBet, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/bet/{betId}", use(PutBet, firebaseAuth)).Methods("PUT")
 	router.HandleFunc("/bet/{betId}", use(DeleteBet, firebaseAuth)).Methods("DELETE")
+	router.HandleFunc("/bet/{betId}/invite/{userId}", use(InviteUserToBet, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/changeUserInBet/{betId}/from/{oldId}/to/{newId}", use(ChangeUserInBet, firebaseAuth)).Methods("POST")
 
 	log.Printf("Running server on port %s", ADDR)
