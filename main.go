@@ -66,6 +66,7 @@ func firebaseAuth(h http.HandlerFunc) http.HandlerFunc {
 		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 		w.Header().Set("Content-Type", "application/json")
 		if getAuth(r) == nil {
+			log.Println("Not authorized")
 			http.Error(w, "Not authorized", 401)
 			return
 		}
@@ -80,6 +81,7 @@ func CreateBet(w http.ResponseWriter, r *http.Request) {
 	var body BetEntry
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
+		log.Println("Invalid body", err)
 		http.Error(w, "Invalid body", 400)
 		return
 	}
@@ -102,6 +104,7 @@ func CreateBet(w http.ResponseWriter, r *http.Request) {
 	ref, _, err := firestore.Collection("bets").Add(context.Background(), bet)
 
 	if err != nil {
+		log.Println("Unable to create Match record", err)
 		http.Error(w, "Unable to create Match record.", http.StatusBadRequest)
 		return
 	}
@@ -116,6 +119,7 @@ func PutBet(w http.ResponseWriter, r *http.Request) {
 	var body BetEntry
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
+		log.Println("Invalid body", err)
 		http.Error(w, "Invalid body", 400)
 		return
 	}
@@ -124,12 +128,14 @@ func PutBet(w http.ResponseWriter, r *http.Request) {
 	ref, err := firestore.Collection("bets").Doc(params["betId"]).Get(context.Background())
 
 	if err != nil {
+		log.Println("Unable to find bet.", err)
 		http.Error(w, "Unable to find bet.", http.StatusBadRequest)
 		return
 	}
 
 	err = ref.DataTo(&bet)
 	if err != nil {
+		log.Println("Unable to parse bet.", err)
 		http.Error(w, "Unable to parse bet.", http.StatusBadRequest)
 		return
 	}
@@ -143,6 +149,7 @@ func PutBet(w http.ResponseWriter, r *http.Request) {
 
 	_, err = firestore.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
 	if err != nil {
+		log.Println("Unable to save bet record.", err)
 		http.Error(w, "Unable to save bet record.", http.StatusBadRequest)
 		return
 	}
@@ -156,12 +163,14 @@ func DeleteBet(w http.ResponseWriter, r *http.Request) {
 	ref, err := firestore.Collection("bets").Doc(params["betId"]).Get(context.Background())
 
 	if err != nil {
+		log.Println("Unable to find bet.", err)
 		http.Error(w, "Unable to find bet.", http.StatusBadRequest)
 		return
 	}
 
 	err = ref.DataTo(&bet)
 	if err != nil {
+		log.Println("Unable to parse bet.", err)
 		http.Error(w, "Unable to parse bet.", http.StatusBadRequest)
 		return
 	}
@@ -169,10 +178,20 @@ func DeleteBet(w http.ResponseWriter, r *http.Request) {
 	delete(bet.Users, token)
 	delete(bet.Bets, token)
 
-	_, err = firestore.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
-	if err != nil {
-		http.Error(w, "Unable to save bet record.", http.StatusBadRequest)
-		return
+	if len(bet.Users) != 0 {
+		_, err = firestore.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
+		if err != nil {
+			log.Println("Unable to delete bet record.", err)
+			http.Error(w, "Unable to delete bet record.", http.StatusBadRequest)
+			return
+		}
+	} else {
+		_, err = firestore.Collection("bets").Doc(params["betId"]).Delete(context.Background())
+		if err != nil {
+			log.Println("Unable to delete bet record.", err)
+			http.Error(w, "Unable to delete bet record.", http.StatusBadRequest)
+			return
+		}
 	}
 }
 
@@ -197,5 +216,5 @@ func main() {
 	router.HandleFunc("/bet/{betId}", use(DeleteBet, firebaseAuth)).Methods("DELETE")
 
 	log.Printf("Running server on port %s", ADDR)
-	log.Fatal(http.ListenAndServe(ADDR, handlers.LoggingHandler(os.Stdout, router)))
+	log.Fatal(http.ListenAndServe(ADDR, handlers.LoggingHandler(os.Stdout, handlers.ProxyHeaders(router))))
 }
