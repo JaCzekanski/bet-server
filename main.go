@@ -256,6 +256,12 @@ func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if _, exist := bet.Users[userId]; exist {
+		log.Println("User already invited.")
+		http.Error(w, "User already invited.", http.StatusBadRequest)
+		return
+	}
+
 	bet.Users[userId] = true
 	bet.Bets[userId] = BetEntry{
 		Bid:   nil,
