@@ -148,6 +148,34 @@ func PutBet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func DeleteBet(w http.ResponseWriter, r *http.Request) {
+	token := *getAuth(r)
+	params := mux.Vars(r)
+
+	var bet Bet
+	ref, err := firestore.Collection("bets").Doc(params["betId"]).Get(context.Background())
+
+	if err != nil {
+		http.Error(w, "Unable to find bet.", http.StatusBadRequest)
+		return
+	}
+
+	err = ref.DataTo(&bet)
+	if err != nil {
+		http.Error(w, "Unable to parse bet.", http.StatusBadRequest)
+		return
+	}
+
+	delete(bet.Users, token)
+	delete(bet.Bets, token)
+
+	_, err = firestore.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
+	if err != nil {
+		http.Error(w, "Unable to save bet record.", http.StatusBadRequest)
+		return
+	}
+}
+
 func main() {
 	ctx := context.Background()
 	opt := option.WithCredentialsFile("bet-app-bc625-firebase-adminsdk-j2r9e-c7205cb679.json")
@@ -166,6 +194,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/bet/{matchId}", use(CreateBet, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/bet/{betId}", use(PutBet, firebaseAuth)).Methods("PUT")
+	router.HandleFunc("/bet/{betId}", use(DeleteBet, firebaseAuth)).Methods("DELETE")
 
 	log.Printf("Running server on port %s", ADDR)
 	log.Fatal(http.ListenAndServe(ADDR, handlers.LoggingHandler(os.Stdout, router)))
