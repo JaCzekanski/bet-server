@@ -43,6 +43,10 @@ type Bet struct {
 	Bets    map[string]BetEntry `firestore:"bets"`
 }
 
+type TokenRequest struct {
+	FcmToken string `firestore:"fcmToken" json:"fcmToken"`
+}
+
 var firestore *_firestore.Client
 
 func use(h http.HandlerFunc, middleware ...func(http.HandlerFunc) http.HandlerFunc) http.HandlerFunc {
@@ -281,13 +285,16 @@ func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
 
 func RegisterDevice(w http.ResponseWriter, r *http.Request) {
 	token := *getAuth(r)
-	params := mux.Vars(r)
 
-	fcmToken := params["fcmToken"]
+	var body TokenRequest
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		log.Println("Invalid body", err)
+		http.Error(w, "Invalid body", 400)
+		return
+	}
 
-	_, err := firestore.Collection("tokens").Doc(token).Set(context.Background(), map[string]interface{}{
-		"token": fcmToken,
-	})
+	_, err = firestore.Collection("tokens").Doc(token).Set(context.Background(), body)
 
 	if err != nil {
 		log.Println("Unable to save fcm token.", err)
@@ -317,7 +324,7 @@ func main() {
 	router.HandleFunc("/bet/{betId}", use(DeleteBet, firebaseAuth)).Methods("DELETE")
 	router.HandleFunc("/bet/{betId}/invite/{userId}", use(InviteUserToBet, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/changeUserInBet/{betId}/from/{oldId}/to/{newId}", use(ChangeUserInBet, firebaseAuth)).Methods("POST")
-	router.HandleFunc("/register/{fcmToken}", use(RegisterDevice, firebaseAuth)).Methods("POST")
+	router.HandleFunc("/register", use(RegisterDevice, firebaseAuth)).Methods("POST")
 
 	log.Printf("Running server on port %s", ADDR)
 	log.Fatal(http.ListenAndServe(ADDR, handlers.LoggingHandler(os.Stdout, handlers.ProxyHeaders(router))))
