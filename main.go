@@ -134,6 +134,7 @@ func sendNotificationToUser(userId string, title string, body string, notificati
 		}
 
 		tokenCache[userId] = *token
+		push.Token = *token
 	}
 
 	_, err := fcmClient.Send(context.Background(), push)
