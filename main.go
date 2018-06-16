@@ -279,6 +279,23 @@ func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
 	// Send push notification
 }
 
+func RegisterDevice(w http.ResponseWriter, r *http.Request) {
+	token := *getAuth(r)
+	params := mux.Vars(r)
+
+	fcmToken := params["fcmToken"]
+
+	_, err := firestore.Collection("tokens").Doc(token).Set(context.Background(), map[string]interface{}{
+		"token": fcmToken,
+	})
+
+	if err != nil {
+		log.Println("Unable to save fcm token.", err)
+		http.Error(w, "Unable to save fcm token.", http.StatusBadRequest)
+		return
+	}
+}
+
 func main() {
 	ctx := context.Background()
 	opt := option.WithCredentialsFile("bet-app-bc625-firebase-adminsdk-j2r9e-c7205cb679.json")
@@ -300,6 +317,7 @@ func main() {
 	router.HandleFunc("/bet/{betId}", use(DeleteBet, firebaseAuth)).Methods("DELETE")
 	router.HandleFunc("/bet/{betId}/invite/{userId}", use(InviteUserToBet, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/changeUserInBet/{betId}/from/{oldId}/to/{newId}", use(ChangeUserInBet, firebaseAuth)).Methods("POST")
+	router.HandleFunc("/register/{fcmToken}", use(RegisterDevice, firebaseAuth)).Methods("POST")
 
 	log.Printf("Running server on port %s", ADDR)
 	log.Fatal(http.ListenAndServe(ADDR, handlers.LoggingHandler(os.Stdout, handlers.ProxyHeaders(router))))
