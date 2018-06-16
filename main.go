@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	_firestore "cloud.google.com/go/firestore"
 	"firebase.google.com/go"
+	"firebase.google.com/go/messaging"
 	"google.golang.org/api/option"
 )
 
@@ -47,7 +49,17 @@ type TokenRequest struct {
 	FcmToken string `firestore:"fcmToken" json:"fcmToken"`
 }
 
+type NotificationRequest struct {
+	Title    string `json:"title"`
+	Body     string `json:"body"`
+	Type     string `json:"type"`
+	Deeplink string `json:"deeplink"`
+}
+
 var firestore *_firestore.Client
+var fcmClient *messaging.Client
+
+var tokenCache map[string]string
 
 func use(h http.HandlerFunc, middleware ...func(http.HandlerFunc) http.HandlerFunc) http.HandlerFunc {
 	for _, m := range middleware {
@@ -75,6 +87,59 @@ func firebaseAuth(h http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		h.ServeHTTP(w, r)
+	}
+}
+
+func getTokenForUser(userId string) (*string, error) {
+	var tokenObject TokenRequest
+	ref, err := firestore.Collection("tokens").Doc(userId).Get(context.Background())
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to load token for user %s", userId)
+	}
+
+	err = ref.DataTo(&tokenObject)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse token for user %s", userId)
+	}
+
+	return &tokenObject.FcmToken, nil
+}
+
+const (
+	TypeInvite   = "INVITE"
+	TypeReminder = "REMINDER"
+	TypeScore    = "SCORE"
+	TypeOther    = "OTHER"
+)
+
+func sendNotificationToUser(userId string, title string, body string, notificationType string, deeplink string) {
+	push := &messaging.Message{
+		Data: map[string]string{
+			"title":    title,
+			"body":     body,
+			"type":     notificationType,
+			"deeplink": deeplink,
+		},
+	}
+
+	if token, exist := tokenCache[userId]; exist {
+		push.Token = token
+	} else {
+		// Get token from Firebase
+		token, err := getTokenForUser(userId)
+		if err != nil {
+			log.Println("sendNotificationToUser error: ", err)
+			return
+		}
+
+		tokenCache[userId] = *token
+	}
+
+	_, err := fcmClient.Send(context.Background(), push)
+	if err != nil {
+		log.Println("Error when sending push notification: ", err)
+		return
 	}
 }
 
@@ -315,6 +380,20 @@ func UnregisterDevice(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func SendNotification(w http.ResponseWriter, r *http.Request) {
+	token := *getAuth(r)
+
+	var body NotificationRequest
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		log.Println("Invalid body", err)
+		http.Error(w, "Invalid body", 400)
+		return
+	}
+
+	go sendNotificationToUser(token, body.Title, body.Body, body.Type, body.Deeplink)
+}
+
 func main() {
 	ctx := context.Background()
 	opt := option.WithCredentialsFile("bet-app-bc625-firebase-adminsdk-j2r9e-c7205cb679.json")
@@ -330,6 +409,14 @@ func main() {
 	defer firestore.Close()
 	log.Printf("Connected to Firebase")
 
+	fcmClient, err = app.Messaging(ctx)
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Connected to FCM")
+
+	tokenCache = make(map[string]string)
+
 	router := mux.NewRouter()
 	router.HandleFunc("/bet/{matchId}", use(CreateBet, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/bet/{betId}", use(PutBet, firebaseAuth)).Methods("PUT")
@@ -338,6 +425,7 @@ func main() {
 	router.HandleFunc("/changeUserInBet/{betId}/from/{oldId}/to/{newId}", use(ChangeUserInBet, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/register", use(RegisterDevice, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/register", use(UnregisterDevice, firebaseAuth)).Methods("DELETE")
+	router.HandleFunc("/notitfication", use(SendNotification, firebaseAuth)).Methods("POST")
 
 	log.Printf("Running server on port %s", ADDR)
 	log.Fatal(http.ListenAndServe(ADDR, handlers.LoggingHandler(os.Stdout, handlers.ProxyHeaders(router))))

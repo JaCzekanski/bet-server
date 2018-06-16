@@ -35,6 +35,12 @@
   version = "v3.0.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/NaySoftware/go-fcm"
+  packages = ["."]
+  revision = "28fff9381d17f35619309c7a5ada41d26030d976"
+
+[[projects]]
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
@@ -229,6 +235,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b81018039221fddca23c2e344e59b4fdef716d0bfd8f29fcbcfc3fd0debc1f57"
+  inputs-digest = "104649a4749e59f818f77786e5a27de3417fe21f2fc92fe9b6d2be5fb22951b2"
   solver-name = "gps-cdcl"
   solver-version = 1
