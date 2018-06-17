@@ -17,12 +17,12 @@ func LoadMatch(matchId string) (*Match, error) {
 	ref, err := firestore.Collection("matches").Doc(matchId).Get(context.Background())
 
 	if err != nil {
-		return nil, fmt.Errorf("unable to find match", err)
+		return nil, fmt.Errorf("unable to find match %v", err)
 	}
 
 	err = ref.DataTo(&match)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse match", err)
+		return nil, fmt.Errorf("unable to parse match %v", err)
 	}
 
 	return &match, nil

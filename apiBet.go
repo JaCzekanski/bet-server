@@ -28,7 +28,7 @@ func CreateBet(w http.ResponseWriter, r *http.Request) {
 			token: true,
 		},
 		Bets: map[string]BetEntry{
-			token: BetEntry{
+			token: {
 				Bid:   body.Bid,
 				Date:  time.Now(),
 				Score: body.Score,

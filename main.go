@@ -29,7 +29,8 @@ func createRouter() *mux.Router {
 	router.HandleFunc("/changeUserInBet/{betId}/from/{oldId}/to/{newId}", use(ChangeUserInBet, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/register", use(RegisterDevice, firebaseAuth)).Methods("POST")
 	router.HandleFunc("/register", use(UnregisterDevice, firebaseAuth)).Methods("DELETE")
-	router.HandleFunc("/notitfication", use(SendNotification, firebaseAuth)).Methods("POST")
+	router.HandleFunc("/notification", use(SendNotification, firebaseAuth)).Methods("POST")
+	router.HandleFunc("/notitfication", use(SendNotification, firebaseAuth)).Methods("POST") // Deprecated
 	return router
 }
 
