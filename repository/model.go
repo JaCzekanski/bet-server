@@ -21,19 +21,20 @@ type BetEntry struct {
 }
 
 type Bet struct {
-	betID   string              // skip serialization
+	betID   string // skip serialization
 	State   string              `firestore:"state"`
 	MatchID string              `firestore:"matchId"`
 	Users   map[string]bool     `firestore:"users"`
 	Bets    map[string]BetEntry `firestore:"bets"`
 }
 
-
 type Match struct {
-	Team1 string  `firestore:"team1"`
-	Team2 string  `firestore:"team2"`
-	Score *string `firestore:"score"`
-	State string  `firestore:"state"`
+	Event int       `firestore:"event"`
+	Team1 string    `firestore:"team1"`
+	Team2 string    `firestore:"team2"`
+	Score *string   `firestore:"score"`
+	State string    `firestore:"state"`
+	Date  time.Time `firestore:"date"`
 }
 
 type NotificationRequest struct {

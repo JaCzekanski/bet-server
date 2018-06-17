@@ -86,13 +86,13 @@ func uploadLeaguesData(data response) {
 	}
 }
 
-func prepareMatchesData(data response) map[string]interface{} {
+func prepareMatchesData(data response) map[string]repository.Match {
 	location, err := tz.LoadLocation("Poland")
 	if err != nil {
 		panic(err)
 	}
 
-	matches := make(map[string]interface{})
+	matches := make(map[string]repository.Match)
 
 	for _, element := range data.Data {
 		date, _ := time.ParseInLocation("2006-01-02 15:04:05", element.Date, location)
@@ -106,26 +106,26 @@ func prepareMatchesData(data response) map[string]interface{} {
 			score = &s
 		}
 
-		matches[strconv.Itoa(element.ID)] = map[string]interface{}{
-			"event": element.LeagueID,
-			"score": score,
-			"team1": strings.ToLower(country.MapCountryToIso(team1.Name)),
-			"team2": strings.ToLower(country.MapCountryToIso(team2.Name)),
-			"date":  date,
-			"state": mapState(element.EventStatus),
+		matches[strconv.Itoa(element.ID)] = repository.Match{
+			Event: element.LeagueID,
+			Score: score,
+			Team1: strings.ToLower(country.MapCountryToIso(team1.Name)),
+			Team2: strings.ToLower(country.MapCountryToIso(team2.Name)),
+			Date:  date,
+			State: mapState(element.EventStatus),
 		}
 	}
 
 	return matches
 }
 
-func calculateDiff(old map[string]interface{}, new map[string]interface{}) map[string]interface{} {
+func calculateDiff(old map[string]repository.Match, new map[string]repository.Match) map[string]repository.Match {
 	if old == nil {
 		log.Printf("No previous results\n")
 		return new
 	}
 
-	diffed := make(map[string]interface{})
+	diffed := make(map[string]repository.Match)
 
 	for id, newElement := range new {
 		oldElement, oldExist := old[id]
@@ -136,22 +136,11 @@ func calculateDiff(old map[string]interface{}, new map[string]interface{}) map[s
 			log.Printf("Document %s changed\n", id)
 
 			// On state DURING -> AFTER  - send push to all users in bets with THIS bet_id
-			n := newElement.(map[string]string)
-			o := oldElement.(map[string]string)
-
-			if n["state"] == StateAfter && o["state"]== StateDuring {
-				score := n["score"]
-				match := push.Match{
+			if newElement.State == StateAfter && oldElement.State == StateDuring {
+				go push.SendMatchScoreInfo(push.Match{
 					MatchID: id,
-					Match: repository.Match{
-						Team1: n["team1"],
-						Team2: n["team2"],
-						Score: &score,
-						State: n["state"],
-					},
-				}
-
-				go push.SendMatchScoreInfo(match)
+					Match: newElement,
+				})
 			}
 
 		} else {
@@ -163,7 +152,7 @@ func calculateDiff(old map[string]interface{}, new map[string]interface{}) map[s
 	return diffed
 }
 
-func uploadData(collection string, matches map[string]interface{}) {
+func uploadData(collection string, matches map[string]repository.Match) {
 	log.Printf("Uploading %s data...\n", collection)
 	batch := app.FirestoreClient.Batch()
 
@@ -178,7 +167,7 @@ func uploadData(collection string, matches map[string]interface{}) {
 	}
 }
 
-var previousMatches map[string]interface{}
+var previousMatches map[string]repository.Match
 
 func DownloadDataAndUploadToFirebase() {
 	// log.Println("Running downloadDataAndUploadToFirebase")
