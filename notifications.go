@@ -45,7 +45,7 @@ func SendInviteNotification(fromID string, toID string, bet Bet) {
 
 	title := fmt.Sprintf("Zaproszenie od %s", fromNick)
 	body := fmt.Sprintf("Obstaw wynik meczu %s:%s", mapCodeToCountry(match.Team1), mapCodeToCountry(match.Team2))
-	deeplink := fmt.Sprintf(UriBet, bet.BetID)
+	deeplink := fmt.Sprintf(UriBet, bet.betID)
 
 	SendNotificationToUser(toID, title, body, TypeInvite, deeplink)
 }

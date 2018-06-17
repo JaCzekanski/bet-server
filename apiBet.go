@@ -212,6 +212,6 @@ func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send push notification
-	bet.BetID = betId
+	bet.betID = betId
 	go SendInviteNotification(token, userId, bet)
 }
