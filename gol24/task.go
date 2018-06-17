@@ -147,6 +147,8 @@ func calculateDiff(old map[string]repository.Match, new map[string]repository.Ma
 			}
 
 		} else {
+			log.Printf("Old: %+v\n", oldElement)
+			log.Printf("New: %+v\n", newElement)
 			continue
 		}
 
