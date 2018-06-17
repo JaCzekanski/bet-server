@@ -151,7 +151,7 @@ func calculateDiff(old map[string]interface{}, new map[string]interface{}) map[s
 					},
 				}
 
-				push.SendMatchScoreInfo(match)
+				go push.SendMatchScoreInfo(match)
 			}
 
 		} else {
