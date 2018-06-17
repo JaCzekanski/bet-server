@@ -21,7 +21,7 @@ type BetEntry struct {
 }
 
 type Bet struct {
-	BetID   string              `firebase:"-"`
+	betID   string              // skip serialization
 	State   string              `firestore:"state"`
 	MatchID string              `firestore:"matchId"`
 	Users   map[string]bool     `firestore:"users"`
