@@ -136,6 +136,9 @@ func calculateDiff(old map[string]repository.Match, new map[string]repository.Ma
 			log.Printf("Document %s changed\n", id)
 
 			// On state DURING -> AFTER  - send push to all users in bets with THIS bet_id
+			log.Printf("Old: %+v\n", oldElement)
+			log.Printf("New: %+v\n", newElement)
+
 			if newElement.State == StateAfter && oldElement.State == StateDuring {
 				go push.SendMatchScoreInfo(push.Match{
 					MatchID: id,
