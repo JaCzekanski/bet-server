@@ -12,19 +12,19 @@ type User struct {
 var nicknameCache = make(map[string]string)
 
 func loadNickname(userID string) (string, error) {
-	var tokenObject TokenRequest
+	var user User
 	ref, err := firestore.Collection("users").Doc(userID).Get(context.Background())
 
 	if err != nil {
 		return "", fmt.Errorf("unable to load nick for userID %s", userID)
 	}
 
-	err = ref.DataTo(&tokenObject)
+	err = ref.DataTo(&user)
 	if err != nil {
 		return "", fmt.Errorf("unable to parse nick for userID %s", userID)
 	}
 
-	return tokenObject.FcmToken, nil
+	return user.Nick, nil
 }
 
 // GetUserNickname Get username from cache or load if from Firebase
