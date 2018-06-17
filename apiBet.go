@@ -169,7 +169,7 @@ func DeleteBet(w http.ResponseWriter, r *http.Request) {
 }
 
 func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
-	// token := *getAuth(r)
+	token := *getAuth(r)
 	params := mux.Vars(r)
 
 	betId := params["betId"]
@@ -212,4 +212,6 @@ func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send push notification
+	bet.BetID = betId
+	go SendInviteNotification(token, userId, bet)
 }

@@ -7,13 +7,6 @@ import (
 	"log"
 )
 
-const (
-	TypeInvite   = "INVITE"
-	TypeReminder = "REMINDER"
-	TypeScore    = "SCORE"
-	TypeOther    = "OTHER"
-)
-
 var tokenCache = make(map[string]string)
 
 func loadTokenForUser(userID string) (string, error) {
@@ -48,7 +41,7 @@ func GetTokenForUser(userID string) (string, error) {
 	return token, nil
 }
 
-func sendNotificationToUser(userID string, title string, body string, notificationType string, deeplink string) {
+func SendNotificationToUser(userID string, title string, body string, notificationType string, deeplink string) {
 	token, err := GetTokenForUser(userID)
 	if err != nil {
 		log.Println("Error when getting token: ", err)

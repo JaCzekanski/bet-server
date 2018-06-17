@@ -50,5 +50,5 @@ func SendNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go sendNotificationToUser(token, body.Title, body.Body, body.Type, body.Deeplink)
+	go SendNotificationToUser(token, body.Title, body.Body, body.Type, body.Deeplink)
 }
