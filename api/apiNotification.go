@@ -1,16 +1,19 @@
-package main
+package api
 
 import (
 	"context"
 	"encoding/json"
 	"log"
 	"net/http"
+	"bet-server/app"
+	push "bet-server/push"
+	"bet-server/repository"
 )
 
 func RegisterDevice(w http.ResponseWriter, r *http.Request) {
 	token := *getAuth(r)
 
-	var body TokenRequest
+	var body push.TokenRequest
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		log.Println("Invalid body", err)
@@ -18,7 +21,7 @@ func RegisterDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = firestore.Collection("tokens").Doc(token).Set(context.Background(), body)
+	_, err = app.FirestoreClient.Collection("tokens").Doc(token).Set(context.Background(), body)
 
 	if err != nil {
 		log.Println("Unable to save fcm token.", err)
@@ -30,7 +33,7 @@ func RegisterDevice(w http.ResponseWriter, r *http.Request) {
 func UnregisterDevice(w http.ResponseWriter, r *http.Request) {
 	token := *getAuth(r)
 
-	_, err := firestore.Collection("tokens").Doc(token).Delete(context.Background())
+	_, err := app.FirestoreClient.Collection("tokens").Doc(token).Delete(context.Background())
 
 	if err != nil {
 		log.Println("Unable to delete fcm token.", err)
@@ -42,7 +45,7 @@ func UnregisterDevice(w http.ResponseWriter, r *http.Request) {
 func SendNotification(w http.ResponseWriter, r *http.Request) {
 	token := *getAuth(r)
 
-	var body NotificationRequest
+	var body repository.NotificationRequest
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		log.Println("Invalid body", err)
@@ -50,5 +53,5 @@ func SendNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go SendNotificationToUser(token, body.Title, body.Body, body.Type, body.Deeplink)
+	go push.SendNotificationToUser(token, body.Title, body.Body, body.Type, body.Deeplink)
 }

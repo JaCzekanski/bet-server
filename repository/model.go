@@ -1,4 +1,4 @@
-package main
+package repository
 
 import (
 	"time"
@@ -28,8 +28,12 @@ type Bet struct {
 	Bets    map[string]BetEntry `firestore:"bets"`
 }
 
-type TokenRequest struct {
-	FcmToken string `firestore:"fcmToken" json:"fcmToken"`
+
+type Match struct {
+	Team1 string  `firestore:"team1"`
+	Team2 string  `firestore:"team2"`
+	Score *string `firestore:"score"`
+	State string  `firestore:"state"`
 }
 
 type NotificationRequest struct {

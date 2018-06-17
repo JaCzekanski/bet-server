@@ -1,6 +1,10 @@
-package main
+package country
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 const JSON = `[
 	{
@@ -1250,17 +1254,43 @@ const JSON = `[
 	}
   ]`
 
-type country struct {
+
+
+var countries []Country = ParseCountries()
+
+type Country struct {
 	NamePl string `json:"name_pl"`
 	NameEn string `json:"name_en"`
 	Code   string `json:"code"`
 }
 
-func parseCountries() []country {
-	var data []country
+func ParseCountries() []Country {
+	var data []Country
 	if err := json.Unmarshal([]byte(JSON), &data); err != nil {
 		panic(err)
 	}
 
 	return data
+}
+
+
+func MapCountryToIso(name string) string {
+	for _, e := range countries {
+		if e.NamePl == name {
+			return e.Code
+		}
+	}
+	fmt.Printf("Unable to find country %s\n", name)
+	return name
+}
+
+func MapCodeToCountry(code string) string {
+	code = strings.ToUpper(code)
+	for _, e := range countries {
+		if e.Code == code {
+			return e.NamePl
+		}
+	}
+	fmt.Printf("Unable to find country %s\n", code)
+	return code
 }

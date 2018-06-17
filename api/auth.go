@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"log"
@@ -13,7 +13,7 @@ func getAuth(r *http.Request) *string {
 	return &token
 }
 
-func use(h http.HandlerFunc, middleware ...func(http.HandlerFunc) http.HandlerFunc) http.HandlerFunc {
+func Use(h http.HandlerFunc, middleware ...func(http.HandlerFunc) http.HandlerFunc) http.HandlerFunc {
 	for _, m := range middleware {
 		h = m(h)
 	}
@@ -21,7 +21,7 @@ func use(h http.HandlerFunc, middleware ...func(http.HandlerFunc) http.HandlerFu
 	return h
 }
 
-func firebaseAuth(h http.HandlerFunc) http.HandlerFunc {
+func FirebaseAuth(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 		w.Header().Set("Content-Type", "application/json")

@@ -1,8 +1,9 @@
-package main
+package repository
 
 import (
 	"fmt"
 	"golang.org/x/net/context"
+	"bet-server/app"
 )
 
 type User struct {
@@ -13,7 +14,7 @@ var nicknameCache = make(map[string]string)
 
 func loadNickname(userID string) (string, error) {
 	var user User
-	ref, err := firestore.Collection("users").Doc(userID).Get(context.Background())
+	ref, err := app.FirestoreClient.Collection("users").Doc(userID).Get(context.Background())
 
 	if err != nil {
 		return "", fmt.Errorf("unable to load nick for userID %s", userID)

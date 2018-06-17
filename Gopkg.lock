@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "4d63.com/tz"
+  packages = ["."]
+  revision = "73a1e3d39b09378a51afc6e7d923ce9a6ca7f38c"
+
+[[projects]]
   name = "cloud.google.com/go"
   packages = [
     "compute/metadata",
@@ -33,12 +39,6 @@
   ]
   revision = "8bf07105e6fdc2c6f38e7939a57b843109f9751b"
   version = "v3.0.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/NaySoftware/go-fcm"
-  packages = ["."]
-  revision = "28fff9381d17f35619309c7a5ada41d26030d976"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -79,6 +79,12 @@
   packages = ["."]
   revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
   version = "v1.6.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/jasonlvhit/gocron"
+  packages = ["."]
+  revision = "54194c9749d48b073c9aeb2c787b6882e95dd0cd"
 
 [[projects]]
   name = "go.opencensus.io"
@@ -235,6 +241,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "104649a4749e59f818f77786e5a27de3417fe21f2fc92fe9b6d2be5fb22951b2"
+  inputs-digest = "830bbaaf329aa46be91a662ee3a6bceec2d6fbc20e610785dd9aaeccc6a0f21e"
   solver-name = "gps-cdcl"
   solver-version = 1

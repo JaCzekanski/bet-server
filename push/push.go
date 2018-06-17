@@ -1,17 +1,18 @@
-package main
+package push
 
 import (
 	"firebase.google.com/go/messaging"
 	"fmt"
 	"golang.org/x/net/context"
 	"log"
+	"bet-server/app"
 )
 
 var tokenCache = make(map[string]string)
 
 func loadTokenForUser(userID string) (string, error) {
 	var tokenObject TokenRequest
-	ref, err := firestore.Collection("tokens").Doc(userID).Get(context.Background())
+	ref, err := app.FirestoreClient.Collection("tokens").Doc(userID).Get(context.Background())
 
 	if err != nil {
 		return "", fmt.Errorf("unable to load token for user %s", userID)
@@ -58,7 +59,8 @@ func SendNotificationToUser(userID string, title string, body string, notificati
 		},
 	}
 
-	_, err = fcmClient.Send(context.Background(), push)
+	log.Printf("Sending push to user %s - title: %s, body: %s, deeplink: %s", userID, title, body, deeplink)
+	_, err = app.FcmClient.Send(context.Background(), push)
 	if err != nil {
 		log.Println("Error when sending push notification: ", err)
 		return

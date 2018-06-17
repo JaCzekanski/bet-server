@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"context"
@@ -7,13 +7,16 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"bet-server/app"
+	"bet-server/push"
+	"bet-server/repository"
 )
 
 func CreateBet(w http.ResponseWriter, r *http.Request) {
 	token := *getAuth(r)
 	params := mux.Vars(r)
 
-	var body BetEntry
+	var body repository.BetEntry
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		log.Println("Invalid body", err)
@@ -21,13 +24,13 @@ func CreateBet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bet := Bet{
-		State:   StateBefore,
+	bet := repository.Bet{
+		State:   repository.StateBefore,
 		MatchID: params["matchId"],
 		Users: map[string]bool{
 			token: true,
 		},
-		Bets: map[string]BetEntry{
+		Bets: map[string]repository.BetEntry{
 			token: {
 				Bid:   body.Bid,
 				Date:  time.Now(),
@@ -36,7 +39,7 @@ func CreateBet(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	ref, _, err := firestore.Collection("bets").Add(context.Background(), bet)
+	ref, _, err := app.FirestoreClient.Collection("bets").Add(context.Background(), bet)
 
 	if err != nil {
 		log.Println("Unable to create Match record", err)
@@ -44,14 +47,14 @@ func CreateBet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(ReturnID{ID: ref.ID})
+	json.NewEncoder(w).Encode(repository.ReturnID{ID: ref.ID})
 }
 
 func PutBet(w http.ResponseWriter, r *http.Request) {
 	token := *getAuth(r)
 	params := mux.Vars(r)
 
-	var body BetEntry
+	var body repository.BetEntry
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		log.Println("Invalid body", err)
@@ -59,8 +62,8 @@ func PutBet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var bet Bet
-	ref, err := firestore.Collection("bets").Doc(params["betId"]).Get(context.Background())
+	var bet repository.Bet
+	ref, err := app.FirestoreClient.Collection("bets").Doc(params["betId"]).Get(context.Background())
 
 	if err != nil {
 		log.Println("Unable to find bet.", err)
@@ -76,13 +79,13 @@ func PutBet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bet.Users[token] = true
-	bet.Bets[token] = BetEntry{
+	bet.Bets[token] = repository.BetEntry{
 		Bid:   body.Bid,
 		Date:  time.Now(),
 		Score: body.Score,
 	}
 
-	_, err = firestore.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
+	_, err = app.FirestoreClient.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
 	if err != nil {
 		log.Println("Unable to save bet record.", err)
 		http.Error(w, "Unable to save bet record.", http.StatusBadRequest)
@@ -98,8 +101,8 @@ func ChangeUserInBet(w http.ResponseWriter, r *http.Request) {
 	oldId := params["oldId"]
 	newId := params["newId"]
 
-	var bet Bet
-	ref, err := firestore.Collection("bets").Doc(betId).Get(context.Background())
+	var bet repository.Bet
+	ref, err := app.FirestoreClient.Collection("bets").Doc(betId).Get(context.Background())
 
 	if err != nil {
 		log.Println("Unable to find bet.", err)
@@ -120,7 +123,7 @@ func ChangeUserInBet(w http.ResponseWriter, r *http.Request) {
 	delete(bet.Users, oldId)
 	delete(bet.Bets, oldId)
 
-	_, err = firestore.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
+	_, err = app.FirestoreClient.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
 	if err != nil {
 		log.Println("Unable to save bet record.", err)
 		http.Error(w, "Unable to save bet record.", http.StatusBadRequest)
@@ -132,8 +135,8 @@ func DeleteBet(w http.ResponseWriter, r *http.Request) {
 	token := *getAuth(r)
 	params := mux.Vars(r)
 
-	var bet Bet
-	ref, err := firestore.Collection("bets").Doc(params["betId"]).Get(context.Background())
+	var bet repository.Bet
+	ref, err := app.FirestoreClient.Collection("bets").Doc(params["betId"]).Get(context.Background())
 
 	if err != nil {
 		log.Println("Unable to find bet.", err)
@@ -152,14 +155,14 @@ func DeleteBet(w http.ResponseWriter, r *http.Request) {
 	delete(bet.Bets, token)
 
 	if len(bet.Users) != 0 {
-		_, err = firestore.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
+		_, err = app.FirestoreClient.Collection("bets").Doc(params["betId"]).Set(context.Background(), bet)
 		if err != nil {
 			log.Println("Unable to delete bet record.", err)
 			http.Error(w, "Unable to delete bet record.", http.StatusBadRequest)
 			return
 		}
 	} else {
-		_, err = firestore.Collection("bets").Doc(params["betId"]).Delete(context.Background())
+		_, err = app.FirestoreClient.Collection("bets").Doc(params["betId"]).Delete(context.Background())
 		if err != nil {
 			log.Println("Unable to delete bet record.", err)
 			http.Error(w, "Unable to delete bet record.", http.StatusBadRequest)
@@ -175,8 +178,8 @@ func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
 	betId := params["betId"]
 	userId := params["userId"]
 
-	var bet Bet
-	ref, err := firestore.Collection("bets").Doc(betId).Get(context.Background())
+	var bet repository.Bet
+	ref, err := app.FirestoreClient.Collection("bets").Doc(betId).Get(context.Background())
 
 	if err != nil {
 		log.Println("Unable to find bet.", err)
@@ -198,13 +201,13 @@ func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bet.Users[userId] = true
-	bet.Bets[userId] = BetEntry{
+	bet.Bets[userId] = repository.BetEntry{
 		Bid:   nil,
 		Date:  time.Now(),
 		Score: "",
 	}
 
-	_, err = firestore.Collection("bets").Doc(betId).Set(context.Background(), bet)
+	_, err = app.FirestoreClient.Collection("bets").Doc(betId).Set(context.Background(), bet)
 	if err != nil {
 		log.Println("Unable to save bet record.", err)
 		http.Error(w, "Unable to save bet record.", http.StatusBadRequest)
@@ -212,6 +215,8 @@ func InviteUserToBet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Send push notification
-	bet.betID = betId
-	go SendInviteNotification(token, userId, bet)
+	go push.SendInviteNotification(token, userId, push.Bet{
+		BetID: betId,
+		Bet: bet,
+	})
 }
