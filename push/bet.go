@@ -8,7 +8,7 @@ import (
 )
 
 func LoadBets(matchId string) (*map[string]repository.Bet, error) {
-	docs, err := app.FirestoreClient.Collection("bets").Where("match_id", "==", matchId).Documents(context.Background()).GetAll()
+	docs, err := app.FirestoreClient.Collection("bets").Where("matchId", "==", matchId).Documents(context.Background()).GetAll()
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to load bets for match %v", err)
