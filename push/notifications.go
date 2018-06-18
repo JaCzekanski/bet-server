@@ -59,6 +59,7 @@ func SendMatchScoreInfo(match Match) {
 		log.Panicln(err)
 		return
 	}
+	log.Printf("%d bets", len(*bets))
 
 	for betId, bet := range *bets {
 		for userId, betEntry := range bet.Bets {

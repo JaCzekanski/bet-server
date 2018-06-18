@@ -140,6 +140,7 @@ func calculateDiff(old map[string]repository.Match, new map[string]repository.Ma
 			log.Printf("New: %+v\n", newElement)
 
 			if newElement.State == StateAfter && oldElement.State == StateDuring {
+				log.Println("Match ended, sending pushes!")
 				go push.SendMatchScoreInfo(push.Match{
 					MatchID: id,
 					Match: newElement,
