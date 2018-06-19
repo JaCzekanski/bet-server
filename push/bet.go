@@ -14,7 +14,7 @@ func LoadBets(matchId string) (*map[string]repository.Bet, error) {
 		return nil, fmt.Errorf("unable to load bets for match %v", err)
 	}
 
-	var bets map[string]repository.Bet
+	var bets = make(map[string]repository.Bet)
 
 	for _, doc := range docs {
 		var bet repository.Bet
